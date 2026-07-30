@@ -134,6 +134,17 @@ async def read_file_resources(file_name: str, ctx:Context):
         
         path = get_relative_path(file_name)
         
+        if not path.exists() or not path.is_file():
+            ctx.warning(f"error: file is missinng: {file_name}")
+            return{
+                "error": f"file is missinng: {file_name}"
+            }
+        
+        ctx.info(f"read file successful: {file_name}")
+        
+        return {
+            "file_content": path.read_text(encoding="utf-8")
+        }
         
         
     except ValueError as e:
