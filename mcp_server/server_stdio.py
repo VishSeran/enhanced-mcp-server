@@ -50,6 +50,15 @@ async def write_file(file_path:str, content:str, ctx:Context):
                 
                 
                 time.sleep(0.05)    
+            
+            await ctx.report_progress(
+                progress=total,
+                total=total,
+                message="Write is completed"
+            )
+            
+            await ctx.info(f"File written successfully to path: {path}")
+            return f"File written successfully to: {file_path}"
                 
         
         
