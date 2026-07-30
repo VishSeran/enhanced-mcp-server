@@ -60,15 +60,26 @@ async def write_file(file_path:str, content:str, ctx:Context):
             await ctx.info(f"File written successfully to path: {path}")
             return f"File written successfully to: {file_path}"
                 
-        
-        
-        
-        
     except ValueError as e:
         await ctx.error(f"Value error: {e}")
         raise
     
     except Exception as e:
-        await ctx.error(f"Error in write file:" {e})
+        await ctx.error(f"Error in write file: {e}")
         raise
+    
+    
 
+@mcp.tool
+async def delete_file(file_path:str, ctx: Context) -> str:
+    
+    try:
+        
+        
+    except ValueError as e:
+        await ctx.error(f"Value error: {e}")
+        raise
+         
+    except Exception as e:
+        await ctx.error(f"Error in write file: {e}")
+        raise
