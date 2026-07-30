@@ -28,6 +28,9 @@ def get_relative_path(file_path:str)->Path:
     """
     
     try:
+        if not file_path:
+            raise ValueError("File path is missing")
+        
         rel = Path(file_path).resolve().relative_to(Base_dir)
         return rel
         
