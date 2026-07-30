@@ -109,5 +109,5 @@ async def delete_file(file_path:str, ctx: Context) -> str:
         raise
          
     except Exception as e:
-        await ctx.error(f"Error in write file: {e}")
+        await ctx.error(f"Error in deleting file: {e}")
         raise
