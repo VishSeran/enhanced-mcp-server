@@ -8,7 +8,7 @@ import time
 
 logger = get_logger("server_stdio")
 
-@mcp.tool
+@mcp.tool()
 async def write_file(file_path:str, content:str, ctx:Context):
     
     """
@@ -70,10 +70,38 @@ async def write_file(file_path:str, content:str, ctx:Context):
     
     
 
-@mcp.tool
+@mcp.tool()
 async def delete_file(file_path:str, ctx: Context) -> str:
     
+    """
+    Delete a file from the project directory.
+    
+    Validates that the path points to a file (not a directory) before deletion.
+    
+    Args:
+        file_path: Relative path to the file to delete
+        ctx: MCP context for logging
+        
+    Returns:
+        Success or error message describing the operation result
+    """
+    
+    
     try:
+        path = get_relative_path(file_path)
+        
+        if path.is_file():
+            path.unlink()
+            await ctx.info(f"Successfully deleted file: {file_path}")
+            return f"Successfully deleted file: {file_path}"
+        
+        elif path.is_dir():
+            await ctx.warning(f"Error: {file_path} is a directory, not a file")
+            return f"Error: {file_path} is a directory, not a file"
+        
+        else:
+            await ctx.warning(f"File not found: {file_path}")
+            return f"File not found: {file_path}"
         
         
     except ValueError as e:
