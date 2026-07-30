@@ -1,9 +1,10 @@
 from configuration.logger import get_logger
-from configuration.configs import get_relative_path
+from configuration.configs import get_relative_path, Base_dir
 from pathlib import Path
 from mcp_server.server import mcp
 from fastmcp import Context
 import time
+from datetime import datetime
 
 
 logger = get_logger("server_stdio")
@@ -114,7 +115,7 @@ async def delete_file(file_path:str, ctx: Context) -> str:
     
     
 @mcp.resource("file:///{file_name}")
-async def read_file_resources(file_name: str, ctx:Context):
+async def read_file_resources(file_name: str, ctx:Context) -> dict:
     
     """
     Read the content  of a file  as an  MCP resource
@@ -153,4 +154,41 @@ async def read_file_resources(file_name: str, ctx:Context):
     
     except Exception as e:
         await ctx.error(f"Error in read file resource: {e}")
+        raise
+    
+
+@mcp.resource("dir://.")
+async def list_files_resource(ctx: Context) -> dict:
+    
+    try:
+        
+        path = get_relative_path(".")
+        
+        if not path.exists():
+            raise ValueError(f"file directory not exists: {path}")
+        
+        items = []
+        
+        for item in path.iterdir():
+            status = item.stat()
+            
+            items.append({
+                "name": item.name,
+                "path": str(item.relative_to(Base_dir)),
+                "type": "dictonary" if item.is_dir() else "file",
+                "size": status.st_size,
+                "modified": datetime.fromtimestamp(status.st_mtime).isoformat(),
+                "created": datetime.fromtimestamp(status.st_ctime).isoformat()
+            })
+            
+        return {
+            "items" : items
+        }
+
+    except ValueError as e:
+        await ctx.error(f"Value error in list files resource: {e}")
+        raise
+    
+    except Exception as e:
+        await ctx.error(f"Error in list files resource: {e}")
         raise
