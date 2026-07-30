@@ -111,3 +111,46 @@ async def delete_file(file_path:str, ctx: Context) -> str:
     except Exception as e:
         await ctx.error(f"Error in deleting file: {e}")
         raise
+    
+    
+@mcp.resource("file:///{file_name}")
+async def read_file_resources(file_name: str, ctx:Context):
+    
+    """
+    Read the content  of a file  as an  MCP resource
+    
+    provides  file content  access  through the MCP  resource  protocol using 
+    the  file:/// URI schema
+    
+    Args:
+        file_name: Relative path to the file read
+        
+    Returns:
+        Dictionary contains either file_content or error message
+    
+    """
+    
+    try:
+        
+        path = get_relative_path(file_name)
+        
+        if not path.exists() or not path.is_file():
+            ctx.warning(f"error: file is missinng: {file_name}")
+            return{
+                "error": f"file is missinng: {file_name}"
+            }
+        
+        ctx.info(f"read file successful: {file_name}")
+        
+        return {
+            "file_content": path.read_text(encoding="utf-8")
+        }
+        
+        
+    except ValueError as e:
+        await ctx.error(f"Value error in read file resource: {e}")
+        raise
+    
+    except Exception as e:
+        await ctx.error(f"Error in read file resource: {e}")
+        raise

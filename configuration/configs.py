@@ -10,7 +10,7 @@ logger = get_logger("config")
 Base_dir = Path.cwd()
 
 
-def get_relative_path(file_path:str)->Path:
+def get_relative_path(file_path:str) -> Path:
     
     """Convert relative path to absolute path within project directory.
 
@@ -34,7 +34,6 @@ def get_relative_path(file_path:str)->Path:
         rel = Path(file_path).resolve().relative_to(Base_dir)
         return rel
         
-        
     except ValueError as e:
         logger.error(f"Path is outside Base_dir: {e}")
         raise
@@ -42,6 +41,3 @@ def get_relative_path(file_path:str)->Path:
     except Exception as e:
         logger.error(f"Error in configs: {e}")
         raise
-        
-        
-
