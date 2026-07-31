@@ -201,7 +201,7 @@ class MCPClient:
                     
                 } for tool in tools_list
             )
-            
+            logger.info(f"tools are fetched: {tools_des}")
             return tools_des
             
         except ValueError as e:
@@ -214,21 +214,23 @@ class MCPClient:
         
     
     async def get_resources(self) -> list[dict[str, Any]]:
-        
         try:
-            
-            resources = await self.stdio_client.list_resources()
-            resources_list = [{
-                "name": res.name,
-                "descriprion": res.description,
-            } for res in resources]
-            
+            result = await self.stdio_client.list_resources()
+
+            resources_list = [
+                {
+                    "name": res.name,
+                    "description": res.description,
+                }
+                for res in result.resources
+            ]
+            logger.info(f"resources are fetched: {resources_list}")
             return resources_list
-            
+
         except ValueError as e:
             logger.error(f"Value error: {e}")
             raise
-            
-        except Exception as e:
-            logger.error(f"Error in get resources: {e}")
+
+        except Exception:
+            logger.exception("Error while getting resources")
             raise
