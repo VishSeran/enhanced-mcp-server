@@ -5,6 +5,7 @@ from fastmcp.client.transports import StdioTransport
 from fastmcp.client import Client
 from fastmcp.client.elicitation import ElicitResult
 from fastmcp import Context
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 
 from agent.llm_agent import LLMAgent
@@ -52,11 +53,11 @@ class MCPClient:
             self.stdio_client = Client(
                 transport,
                 elicitation_handler = self.elicitation_handler,
-                progress_handler = self.progree_handler,
+                progress_handler = self.progress_handler,
                 message_handler = self.message_handler
             )
             
-            await self.exit_stack.enter_async_context(stdio_client)
+            await self.exit_stack.enter_async_context(self.stdio_client)
             
             
         except ValueError as e:
@@ -130,7 +131,7 @@ class MCPClient:
         
         try:
             
-            if not progress:
+            if progress is None:
                 raise ValueError("progress is missing")
             
             if total is not None:
@@ -162,7 +163,7 @@ class MCPClient:
         
         try:
             
-            if not message:
+            if message is None:
                 raise ValueError("message is missing")
             
             if hasattr(message, 'root'):
@@ -190,17 +191,16 @@ class MCPClient:
             
             tools_list = await self.stdio_client.list_tools()
             logger.info("Tools are fetched")
-            
-            tools_des = []
-            
-            tools_des.append(
+        
+            tools_des = [
                 {
                     "name": tool.name,
                     "description": tool.description,
                     "input_schema": tool.inputSchema
                     
                 } for tool in tools_list
-            )
+            ]
+                
             logger.info(f"tools are fetched: {tools_des}")
             return tools_des
             
@@ -272,7 +272,7 @@ class MCPClient:
     async def init_agent(self):
         
         try:
-            tools = await self.get_tools()
+            tools = await load_mcp_tools(self.stdio_client)
             self.agent = LLMAgent(tools=tools)
             
         except ValueError as e:
@@ -287,10 +287,17 @@ class MCPClient:
         
         try:
             
-            response = await self.agent.get_response(query)
+            if self.agent is None:
+                raise RuntimeError(
+                    "Agent is not initialized"
+                )
             
-        except ValueError as e:
-            logger.error(f"Value error: {e}")
+            response = await self.agent.get_response(query)
+            logger.info(f"client llm response is fetched: {response}")
+            return response
+        
+        except RuntimeError as e:
+            logger.error(f"runtime error: {e}")
             raise
             
         except Exception as e:
