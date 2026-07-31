@@ -114,3 +114,32 @@ class MCPClient:
         except Exception as e:
             logger.error(f"Error in elicitation_handler: {e}")
             raise
+        
+    
+    async def progress_handler(self, progress:float, total:float | None, message:str | None) -> None:
+        """Handle progress notifications from the MCP server.
+
+        Displays progress updates to the user, showing percentage complete if total is provided.
+
+        Args:
+            progress: Current progress value
+            total: Total expected progress value (None if unknown)
+            message: Optional descriptive message about current progress
+        """
+        
+        try:
+            
+            if total is not None:
+                percentage = (progress/total) * 100
+                print(f"Progress: {percentage:.1f}% - {message or ''}")
+                
+            else:
+                print(f"Progress: {progress} - {message or ''}")
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in progress_handler: {e}")
+            raise
