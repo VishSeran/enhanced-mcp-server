@@ -6,7 +6,6 @@ from fastmcp import Context
 import time
 from datetime import datetime
 
-
 logger = get_logger("server_stdio")
 
 @mcp.tool()
@@ -191,4 +190,41 @@ async def list_files_resource(ctx: Context) -> dict:
     
     except Exception as e:
         await ctx.error(f"Error in list files resource: {e}")
+        raise
+    
+
+@mcp.prompt()
+async def code_review(file_path: str, ctx: Context) -> str:
+    
+    """Generate a prompt for code review  and quality evaluation.
+    
+        Reads a code file and generate a prompt for groq support to perform a comprehensive 
+        code review.
+        
+        Args:
+            file_path: the file path for a file that contains the code.
+            ctx: MCP context that manages logging and communication.
+            
+        Returns:
+            Formatted prompt string for code review.
+            
+        Raises:
+            FileNotFoundError: if the specified file doesn't exist 
+    """
+    
+    try:
+        
+        path = get_relative_path(file_path)
+        
+        if not path.is_file() or not path.exists():
+            await ctx.warning(f"Error: {file_path} is not a valid file")
+            raise FileNotFoundError(f"Error: {file_path} is not a valid file")
+        
+        
+    except FileNotFoundError as e:
+        await ctx.error(f"Value error in code review: {e}")
+        raise
+    
+    except Exception as e:
+        await ctx.error(f"Error in code review: {e}")
         raise
