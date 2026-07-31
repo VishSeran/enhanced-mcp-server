@@ -325,3 +325,8 @@ async def documentation_generator(ctx: Context) -> str:
     except Exception as e:
         await ctx.error(f"Error in code review: {e}")
         raise
+    
+    
+if __name__ == "__main__":
+    logger.info("Starting File Operations Server...")
+    mcp.run()
