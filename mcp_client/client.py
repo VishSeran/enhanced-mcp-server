@@ -1,9 +1,9 @@
-from typing import Type
 
 from contextlib import AsyncExitStack
 from fastmcp.client.transports import StdioTransport
 from fastmcp.client import Client
 from fastmcp.client.elicitation import ElicitResult
+from fastmcp import Context
 
 
 from agent.llm_agent import LLMAgent
@@ -67,7 +67,7 @@ class MCPClient:
             raise
         
     
-    async def elicitation_handler(self, message:str, response_type:type, params, context):
+    async def elicitation_handler(self, message:str, response_type:type, ctx:Context):
         """Handle elicitation requests from the MCP server.
     
                 When the server needs user input, this handler prompts the user,
@@ -97,8 +97,15 @@ class MCPClient:
             
                 user_data[field_name] = user_input
                 
-            logger.info("elicitation response if fetched")
-            return response_type(**user_data)
+            response = response_type(**user_data)
+            
+            await ctx.info(f"elicitation response if fetched: {response}")
+            
+            logger.info(
+                    "Elicitation response: %s",
+                    response
+                )
+            return response
   
         except ValueError as e:
             logger.error(f"Value error: {e}")
