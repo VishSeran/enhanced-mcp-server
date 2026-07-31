@@ -37,6 +37,10 @@ class MCPClient:
         
         
         try:
+            if self.stdio_client is not None:
+                raise RuntimeError(
+                    "Already connected to MCP server"
+                )
             
             if not server_script_path:
                 raise ValueError("server script must have to connect the server!!!")
@@ -269,14 +273,32 @@ class MCPClient:
                 logger.error(f"Error in get prompt: {e}")
                 raise
             
+            
+    async def close(self):
+        
+        await self.exit_stack.aclose()
+        
+        self.stdio_client = None
+        self.agent = None
+        
+        logger.info(
+        "MCP client closed"
+    )
+            
     async def init_agent(self):
         
         try:
+            
+            if self.stdio_client is None:
+                raise RuntimeError(
+                    "MCP server is not connected"
+                )
+                
             tools = await load_mcp_tools(self.stdio_client)
             self.agent = LLMAgent(tools=tools)
             
-        except ValueError as e:
-            logger.error(f"Value error: {e}")
+        except RuntimeError as e:
+            logger.error(f"Runtime error: {e}")
             raise
             
         except Exception as e:
