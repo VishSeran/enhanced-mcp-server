@@ -129,6 +129,9 @@ class MCPClient:
         
         try:
             
+            if not progress:
+                raise ValueError("progress is missing")
+            
             if total is not None:
                 percentage = (progress/total) * 100
                 print(f"Progress: {percentage:.1f}% - {message or ''}")
@@ -142,4 +145,39 @@ class MCPClient:
             
         except Exception as e:
             logger.error(f"Error in progress_handler: {e}")
+            raise
+        
+        
+    async def message_handler(self,message) -> None:
+        
+        """Handle notification messages from the MCP server.
+
+        Processes server notifications such as tool list changes or resource updates
+        and displays appropriate messages to the user.
+
+        Args:
+            message: MCP notification message from the server
+        """
+        
+        try:
+            
+            if not message:
+                raise ValueError("message is missing")
+            
+            if hasattr(message, 'root'):
+                method = message.root.method
+                print(f"Received: {method}")
+                
+                if method == "notifications/tools/list_changed":
+                    print("Tools have changed - might want to refresh tool cache")
+                    
+                elif method == "notifications/resources/list_changed":
+                    print("Resources have changed - might want to refresh tool cache")
+         
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in message_handler: {e}")
             raise
