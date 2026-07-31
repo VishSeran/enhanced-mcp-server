@@ -43,7 +43,8 @@ class LLMAgent:
             self.llm = ChatGroq(
                 api_key=GROQ_API,
                 model=model_name,
-                temperature=0.5
+                temperature=0.5,
+                max_tokens=4000
             )
             
             logger.info(f"{model_name} model initiated")
@@ -85,7 +86,7 @@ class LLMAgent:
                         
                     }
                 ]
-            })
+            }, config=self.config)
             
             logger.info("Reponse is fetched")
             return response['messages'][-1].content

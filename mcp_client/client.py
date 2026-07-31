@@ -5,6 +5,7 @@ from fastmcp.client.transports import StdioTransport
 from fastmcp.client import Client
 from fastmcp.client.elicitation import ElicitResult
 from fastmcp import Context
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 
 from agent.llm_agent import LLMAgent
@@ -15,12 +16,12 @@ logger = get_logger("mcp-client")
 
 class MCPClient:
     
-    def __init__(self, tools):
+    def __init__(self):
         
         
         try:
             self.stdio_client = None
-            self.agent = LLMAgent(tools)
+            self.agent = None
             # AsyncExitStack for managing async context managers
             self.exit_stack = AsyncExitStack()
             
@@ -36,6 +37,10 @@ class MCPClient:
         
         
         try:
+            if self.stdio_client is not None:
+                raise RuntimeError(
+                    "Already connected to MCP server"
+                )
             
             if not server_script_path:
                 raise ValueError("server script must have to connect the server!!!")
@@ -52,11 +57,11 @@ class MCPClient:
             self.stdio_client = Client(
                 transport,
                 elicitation_handler = self.elicitation_handler,
-                progress_handler = self.progree_handler,
+                progress_handler = self.progress_handler,
                 message_handler = self.message_handler
             )
             
-            await self.exit_stack.enter_async_context(stdio_client)
+            await self.exit_stack.enter_async_context(self.stdio_client)
             
             
         except ValueError as e:
@@ -130,7 +135,7 @@ class MCPClient:
         
         try:
             
-            if not progress:
+            if progress is None:
                 raise ValueError("progress is missing")
             
             if total is not None:
@@ -162,10 +167,10 @@ class MCPClient:
         
         try:
             
-            if not message:
+            if message is None:
                 raise ValueError("message is missing")
             
-            if hasattr(message, 'root'):
+            if hasattr(message, 'root') and hasattr(message.root, "method"):
                 method = message.root.method
                 print(f"Received: {method}")
                 
@@ -190,17 +195,16 @@ class MCPClient:
             
             tools_list = await self.stdio_client.list_tools()
             logger.info("Tools are fetched")
-            
-            tools_des = []
-            
-            tools_des.append(
+        
+            tools_des = [
                 {
                     "name": tool.name,
                     "description": tool.description,
                     "input_schema": tool.inputSchema
                     
                 } for tool in tools_list
-            )
+            ]
+                
             logger.info(f"tools are fetched: {tools_des}")
             return tools_des
             
@@ -234,3 +238,91 @@ class MCPClient:
         except Exception:
             logger.exception("Error while getting resources")
             raise
+        
+    async def get_prompt(self):
+        
+        try:
+            
+            result = await self.stdio_client.list_prompts()
+            logger.info("Prompts list fetched success")
+            
+            return result
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get prompt: {e}")
+            raise
+        
+    async def get_resource_templates(self):
+            
+            try:
+                
+                result = await self.stdio_client.list_resource_templates()
+                logger.info("resource templates list fetched success")
+                
+                return result
+                
+            except ValueError as e:
+                logger.error(f"Value error: {e}")
+                raise
+                
+            except Exception as e:
+                logger.error(f"Error in get prompt: {e}")
+                raise
+            
+            
+    async def close(self):
+        
+        await self.exit_stack.aclose()
+        
+        self.stdio_client = None
+        self.agent = None
+        
+        logger.info(
+        "MCP client closed"
+    )
+            
+    async def init_agent(self):
+        
+        try:
+            
+            if self.stdio_client is None:
+                raise RuntimeError(
+                    "MCP server is not connected"
+                )
+                
+            tools = await load_mcp_tools(self.stdio_client)
+            self.agent = LLMAgent(tools=tools)
+            
+        except RuntimeError as e:
+            logger.error(f"Runtime error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in init_agent: {e}")
+            raise
+            
+    async def get_llm_response(self,query):
+        
+        try:
+            
+            if self.agent is None:
+                raise RuntimeError(
+                    "Agent is not initialized"
+                )
+            
+            response = await self.agent.get_response(query)
+            logger.info(f"client llm response is fetched: {response}")
+            return response
+        
+        except RuntimeError as e:
+            logger.error(f"runtime error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get_llm_response: {e}")
+            raise
+        
