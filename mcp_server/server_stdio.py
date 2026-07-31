@@ -220,6 +220,25 @@ async def code_review(file_path: str, ctx: Context) -> str:
             await ctx.warning(f"Error: {file_path} is not a valid file")
             raise FileNotFoundError(f"Error: {file_path} is not a valid file")
         
+        read_code = path.read_text(encoding="utf-8").strip()
+        language = path.suffix.lower()
+        
+        
+        prompt = f"""You are an expert code editor. Review the following code quality.
+
+                File: {file_path}
+                Language (file suffix): {language or "unknown"}
+
+                Current code:
+                '''
+                {read_code}
+                '''
+
+                Provide a comprehensive evaluation of the code:
+
+                """
+        ctx.info("Successfully returned prompt")
+        return prompt
         
     except FileNotFoundError as e:
         await ctx.error(f"Value error in code review: {e}")
