@@ -251,3 +251,20 @@ class MCPClient:
         except Exception as e:
             logger.error(f"Error in get prompt: {e}")
             raise
+        
+    async def get_resource_templates(self):
+            
+            try:
+                
+                result = await self.stdio_client.list_resource_templates()
+                logger.info("resource templates list fetched success")
+                
+                return result
+                
+            except ValueError as e:
+                logger.error(f"Value error: {e}")
+                raise
+                
+            except Exception as e:
+                logger.error(f"Error in get prompt: {e}")
+                raise
