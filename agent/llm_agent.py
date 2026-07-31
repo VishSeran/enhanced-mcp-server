@@ -96,6 +96,6 @@ class LLMAgent:
             raise
             
         except Exception as e:
-            logger.error(f"Error in llm agent initialization: {e}")
+            logger.error(f"Error in get response: {e}")
             raise    
         
