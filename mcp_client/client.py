@@ -15,12 +15,12 @@ logger = get_logger("mcp-client")
 
 class MCPClient:
     
-    def __init__(self, tools):
+    def __init__(self):
         
         
         try:
             self.stdio_client = None
-            self.agent = LLMAgent(tools)
+            self.agent = None
             # AsyncExitStack for managing async context managers
             self.exit_stack = AsyncExitStack()
             
@@ -268,3 +268,32 @@ class MCPClient:
             except Exception as e:
                 logger.error(f"Error in get prompt: {e}")
                 raise
+            
+    async def init_agent(self):
+        
+        try:
+            tools = await self.get_tools()
+            self.agent = LLMAgent(tools=tools)
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in init_agent: {e}")
+            raise
+            
+    async def get_llm_response(self,query):
+        
+        try:
+            
+            response = await self.agent.get_response(query)
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get_llm_response: {e}")
+            raise
+        
