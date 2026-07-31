@@ -234,3 +234,20 @@ class MCPClient:
         except Exception:
             logger.exception("Error while getting resources")
             raise
+        
+    async def get_prompt(self):
+        
+        try:
+            
+            result = await self.stdio_client.list_prompts()
+            logger.info("Prompts list fetched success")
+            
+            return result
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get prompt: {e}")
+            raise
