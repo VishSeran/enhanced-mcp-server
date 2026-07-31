@@ -159,6 +159,18 @@ async def read_file_resources(file_name: str, ctx:Context) -> dict:
 @mcp.resource("dir://.")
 async def list_files_resource(ctx: Context) -> dict:
     
+    """
+    This function is handling the mcp resouce that does lisiting all the files and directories in the
+    root directory and return as a dictionary.
+    
+    Args:
+        ctx: MCP Context that manages the logging and the communications.
+
+
+    Returns:
+        returns a dictionary type values that contains answers or if file not found the return an error.
+    """
+    
     try:
         
         path = get_relative_path(".")
