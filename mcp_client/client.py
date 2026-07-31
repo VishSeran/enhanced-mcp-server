@@ -1,3 +1,4 @@
+from typing import Any
 
 from contextlib import AsyncExitStack
 from fastmcp.client.transports import StdioTransport
@@ -18,7 +19,7 @@ class MCPClient:
         
         
         try:
-            
+            self.stdio_client = None
             self.agent = LLMAgent(tools)
             # AsyncExitStack for managing async context managers
             self.exit_stack = AsyncExitStack()
@@ -48,7 +49,7 @@ class MCPClient:
                 args =["-m", server_script_path]
             )
             
-            stdio_client = Client(
+            self.stdio_client = Client(
                 transport,
                 elicitation_handler = self.elicitation_handler,
                 progress_handler = self.progree_handler,
@@ -113,4 +114,123 @@ class MCPClient:
             
         except Exception as e:
             logger.error(f"Error in elicitation_handler: {e}")
+            raise
+        
+    
+    async def progress_handler(self, progress:float, total:float | None, message:str | None) -> None:
+        """Handle progress notifications from the MCP server.
+
+        Displays progress updates to the user, showing percentage complete if total is provided.
+
+        Args:
+            progress: Current progress value
+            total: Total expected progress value (None if unknown)
+            message: Optional descriptive message about current progress
+        """
+        
+        try:
+            
+            if not progress:
+                raise ValueError("progress is missing")
+            
+            if total is not None:
+                percentage = (progress/total) * 100
+                print(f"Progress: {percentage:.1f}% - {message or ''}")
+                
+            else:
+                print(f"Progress: {progress} - {message or ''}")
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in progress_handler: {e}")
+            raise
+        
+        
+    async def message_handler(self,message) -> None:
+        
+        """Handle notification messages from the MCP server.
+
+        Processes server notifications such as tool list changes or resource updates
+        and displays appropriate messages to the user.
+
+        Args:
+            message: MCP notification message from the server
+        """
+        
+        try:
+            
+            if not message:
+                raise ValueError("message is missing")
+            
+            if hasattr(message, 'root'):
+                method = message.root.method
+                print(f"Received: {method}")
+                
+                if method == "notifications/tools/list_changed":
+                    print("Tools have changed - might want to refresh tool cache")
+                    
+                elif method == "notifications/resources/list_changed":
+                    print("Resources have changed - might want to refresh tool cache")
+         
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in message_handler: {e}")
+            raise
+        
+        
+    async def get_tools(self) -> list[dict[str, Any]]:
+        
+        try:
+            
+            tools_list = await self.stdio_client.list_tools()
+            logger.info("Tools are fetched")
+            
+            tools_des = []
+            
+            tools_des.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.inputSchema
+                    
+                } for tool in tools_list
+            )
+            logger.info(f"tools are fetched: {tools_des}")
+            return tools_des
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get tools: {e}")
+            raise
+        
+    
+    async def get_resources(self) -> list[dict[str, Any]]:
+        try:
+            result = await self.stdio_client.list_resources()
+
+            resources_list = [
+                {
+                    "name": res.name,
+                    "description": res.description,
+                }
+                for res in result.resources
+            ]
+            logger.info(f"resources are fetched: {resources_list}")
+            return resources_list
+
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+
+        except Exception:
+            logger.exception("Error while getting resources")
             raise
