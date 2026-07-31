@@ -1,5 +1,6 @@
 from configuration.logger import get_logger
 from configuration.configs import get_relative_path, Base_dir
+from schema.filename_schema import DocumentGeneratorSchema
 from pathlib import Path
 from mcp_server.server import mcp
 from fastmcp import Context
@@ -253,9 +254,74 @@ async def code_review(file_path: str, ctx: Context) -> str:
         return prompt
         
     except FileNotFoundError as e:
-        await ctx.error(f"Value error in code review: {e}")
+        await ctx.error(f"File not found error in code review: {e}")
         raise
     
+    except Exception as e:
+        await ctx.error(f"Error in code review: {e}")
+        raise
+    
+
+@mcp.prompt()
+async def documentation_generator(ctx: Context) -> str:
+    
+    """
+    Generate a prompt for creating code documentation.
+    
+    Reads a code file, elicits a  documentation filename from the user,
+    and generates a prompt for groq to create comprehensive documentation.
+    
+    Args:
+        file_path: Relative path to the code file to document
+        ctx: MCP context for logging and elicitation
+
+    Returns:
+        Formatted prompt string for documentation generation
+
+    Raises:
+        FileNotFoundError: If the specified file doesn't exist
+    """
+    
+    try:
+        
+        result = await ctx.elicit(
+            message="Please provide the subject file name and the documentation file name",
+            response_type=DocumentGeneratorSchema
+        )
+        
+        file_path = result.data.file_path
+        path = get_relative_path(file_path)
+        
+        if not path.exists() or not path.is_file():
+            await ctx.warning(f"File not found in: {file_path}")
+            raise FileNotFoundError(f"File not found in: {file_path}")
+        
+        code = path.read_text(encoding="utf-8").strip()
+        language = path.suffix.lower()
+        
+        doc_name = result.data.name
+        
+        prompt = f"""You are an expert technical writer and documentation specialist. Create documentation for the following code file:
+
+                File: {file_path}
+                Language (file suffix): {language or "unknown"}
+
+                Current code:
+                '''
+                {code}
+                '''
+
+                Use MCP tools available to you to create the separate documentation file:
+                - **CRITICAL DETAIL: Name that separate document EXACTLY: {doc_name}**
+                - Add the .md suffix yourself if the name doesn't include it already""".strip()
+        
+        await ctx.info("Successfully returned prompt")
+        return prompt
+       
+    except ValueError as e:
+        await ctx.error(f"File not found error in code review: {e}")
+        raise
+        
     except Exception as e:
         await ctx.error(f"Error in code review: {e}")
         raise
