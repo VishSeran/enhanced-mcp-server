@@ -211,3 +211,24 @@ class MCPClient:
         except Exception as e:
             logger.error(f"Error in get tools: {e}")
             raise
+        
+    
+    async def get_resources(self) -> list[dict[str, Any]]:
+        
+        try:
+            
+            resources = await self.stdio_client.list_resources()
+            resources_list = [{
+                "name": res.name,
+                "descriprion": res.description,
+            } for res in resources]
+            
+            return resources_list
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get resources: {e}")
+            raise
