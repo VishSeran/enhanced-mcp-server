@@ -170,7 +170,7 @@ class MCPClient:
             if message is None:
                 raise ValueError("message is missing")
             
-            if hasattr(message, 'root'):
+            if hasattr(message, 'root') and hasattr(message.root, "method"):
                 method = message.root.method
                 print(f"Received: {method}")
                 
