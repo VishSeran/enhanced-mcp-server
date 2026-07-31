@@ -70,16 +70,26 @@ class LLMAgent:
             raise
         
     
-    async def get_response(query:str):
+    async def get_response(self, query:str):
         
         try:
             
             if not query:
                 raise ValueError("Query is missing")
             
-            response = se.llm_agent
+            response = await self.llm_agent.ainvoke({
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": query
+                        
+                    }
+                ]
+            })
             
-            
+            logger.info("Reponse is fetched")
+            return response['messages'][-1].content
+  
             
         except ValueError as e:
             logger.error(f"Value error: {e}")
