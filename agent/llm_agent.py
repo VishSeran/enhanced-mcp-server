@@ -44,3 +44,21 @@ class LLMAgent:
             logger.error(f"Error in llm agent initialization: {e}")
             raise
         
+    
+    async def get_response(query:str):
+        
+        try:
+            
+            if not query:
+                raise ValueError("Query is missing")
+            
+            
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in llm agent initialization: {e}")
+            raise    
+        
