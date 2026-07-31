@@ -1,3 +1,4 @@
+from typing import Any
 
 from contextlib import AsyncExitStack
 from fastmcp.client.transports import StdioTransport
@@ -18,7 +19,7 @@ class MCPClient:
         
         
         try:
-            
+            self.stdio_client = None
             self.agent = LLMAgent(tools)
             # AsyncExitStack for managing async context managers
             self.exit_stack = AsyncExitStack()
@@ -48,7 +49,7 @@ class MCPClient:
                 args =["-m", server_script_path]
             )
             
-            stdio_client = Client(
+            self.stdio_client = Client(
                 transport,
                 elicitation_handler = self.elicitation_handler,
                 progress_handler = self.progree_handler,
@@ -180,4 +181,33 @@ class MCPClient:
             
         except Exception as e:
             logger.error(f"Error in message_handler: {e}")
+            raise
+        
+        
+    async def get_tools(self) -> list[dict[str, Any]]:
+        
+        try:
+            
+            tools_list = await self.stdio_client.list_tools()
+            logger.info("Tools are fetched")
+            
+            tools_des = []
+            
+            tools_des.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.inputSchema
+                    
+                } for tool in tools_list
+            )
+            
+            return tools_des
+            
+        except ValueError as e:
+            logger.error(f"Value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get tools: {e}")
             raise
