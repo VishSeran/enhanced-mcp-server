@@ -1,11 +1,12 @@
-from configuration.logger import get_logger
-from configuration.configs import get_relative_path, Base_dir
-from schema.filename_schema import DocumentGeneratorSchema
-from pathlib import Path
-from mcp_server.server import mcp
-from fastmcp import Context
 import time
 from datetime import datetime
+
+from configurations.configs import Base_dir, get_relative_path
+from configurations.logger import get_logger
+from fastmcp import Context
+
+from mcp_server.server import mcp
+from schema.filename_schema import DocumentGeneratorSchema
 
 logger = get_logger("server_stdio")
 
@@ -189,7 +190,7 @@ async def list_files_resource(ctx: Context) -> dict:
                 "path": str(item.relative_to(Base_dir)),
                 "type": "dictonary" if item.is_dir() else "file",
                 "size": status.st_size,
-                "modified": datetime.fromtimestamp(status.st_mtime).isoformat(),
+                "modified": datetime.fromtimestamp(status.st_mtime).isoformat(),  # noqa: DTZ006
                 "created": datetime.fromtimestamp(status.st_ctime).isoformat()
             })
             

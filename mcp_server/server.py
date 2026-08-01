@@ -1,6 +1,6 @@
 from fastmcp import FastMCP
-from configuration.logger import get_logger
 
+from configurations.logger import get_logger
 
 logger = get_logger("server")
 

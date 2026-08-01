@@ -1,18 +1,16 @@
+import json
+from contextlib import AsyncExitStack
 from typing import Any
 from urllib.parse import quote
-import json
 
-from contextlib import AsyncExitStack
-from fastmcp.client.transports import StdioTransport
+from fastmcp import Context
 from fastmcp.client import Client
 from fastmcp.client.elicitation import ElicitResult
-from fastmcp import Context
+from fastmcp.client.transports import StdioTransport
 from langchain_mcp_adapters.tools import load_mcp_tools
 
-
 from agent.llm_agent import LLMAgent
-from configuration.logger import get_logger
-
+from configurations.logger import get_logger
 
 logger = get_logger("mcp-client")
 
@@ -47,15 +45,22 @@ class MCPClient:
             if not server_script_path:
                 raise ValueError("server script must have to connect the server!!!")
             
-            if not (server_script_path.endswith((".py", ".js", ".ts"))):
+            if (server_script_path.endswith((".py", ".js", ".ts"))):
+                
+                transport = StdioTransport(
+                                command="python",
+                                args =[server_script_path]
+                            )
+            
+            elif "." in server_script_path:
+                transport = StdioTransport(
+                    command="python",
+                    args=["-m", server_script_path]
+                )
+                
+            else:
                 raise ValueError("server script must be a .py or .js or .ts file") 
-            
-            
-            transport = StdioTransport(
-                command="python",
-                args =["-m", server_script_path]
-            )
-            
+
             self.stdio_client = Client(
                 transport,
                 elicitation_handler = self.elicitation_handler,

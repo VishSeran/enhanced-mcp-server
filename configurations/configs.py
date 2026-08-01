@@ -1,6 +1,6 @@
-from configuration.logger import get_logger
 from pathlib import Path
 
+from configurations.logger import get_logger
 
 MODEL_NAME = "llama-3.3-70b-versatile"
 PORT = 9000
