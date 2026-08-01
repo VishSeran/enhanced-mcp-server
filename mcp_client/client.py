@@ -414,7 +414,7 @@ class MCPClient:
             
             # Access file resource using file:/// URI scheme
             resource = await self.stdio_client.read_resource(f"file:///{encoded_file_name}")
-            file_content = json.load(resource[0].text)['file_content']
+            file_content = json.loads(resource[0].text)['file_content']
             
             logger.info(f"File Content:\n {file_content}")
             print(f"File Content:\n {file_content}")
@@ -423,5 +423,20 @@ class MCPClient:
 
         except Exception as e:
             logger.error(f"Error in read file: {e}")
+            raise
+        
+    async def read_dir(self):
+        
+        try:
+            response = await self.stdio_client.read_resource("dir://.")
+            dir_content = json.loads(response[0].text)['content']
+            
+            logger.info(f"File Content:\n {dir_content}")
+            print(f"File Content:\n {dir_content}")
+            
+            return dir_content
+            
+        except Exception as e:
+            logger.error(f"Error in read dir: {e}")
             raise
            
