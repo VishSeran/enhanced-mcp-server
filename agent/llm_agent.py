@@ -1,15 +1,13 @@
 
 import os
-import dotenv
 
-from langchain_groq import ChatGroq
+import dotenv
 from langchain.agents import create_agent
+from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import InMemorySaver
 
-
-from configuration.configs import MODEL_NAME
-from configuration.logger import get_logger
-
+from configurations.configs import MODEL_NAME
+from configurations.logger import get_logger
 
 logger = get_logger("llm-agent")
 dotenv.load_dotenv()
