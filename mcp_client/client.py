@@ -457,11 +457,11 @@ class MCPClient:
             print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
             
     
-    async def quit(self):
-        
+    async def quit():
+        print("Exiting client...")
+        return "quit"
         
             
-    
     async def menu(self):
         
         try:
@@ -475,7 +475,7 @@ class MCPClient:
                 "3": self.read_file(),
                 "4": self.read_dir(),
                 "5": self.conversation(),
-                "6": 
+                "6": self.quit()
                 
             }
             
@@ -490,6 +490,18 @@ class MCPClient:
                     5. Converse with Agent
                     q. Quit
                     > """).strip()
+                
+                
+                action = menu_actions.get(choice)
+                
+                if not action:
+                    logger.info(f"invalid actions: {action}")
+                    print("Invalid choice. Please try again.")
+                    continue
+                
+                result = await action()
+                if result == "quit":
+                    break
             
             
             
