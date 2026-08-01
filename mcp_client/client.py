@@ -457,12 +457,39 @@ class MCPClient:
             print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
             
     
+    async def quit(self):
+        
+        
+            
+    
     async def menu(self):
         
         try:
             
             print("\nMCP Client Started!!!")
             print("Select from the menu or 'quit'/'q' to exit.")
+            
+            menu_actions = {
+                "1": lambda: self.prompt("documentation_generator"),
+                "2": lambda: self.prompt("code_review"),
+                "3": self.read_file(),
+                "4": self.read_dir(),
+                "5": self.conversation(),
+                "6": 
+                
+            }
+            
+            while(True):
+            
+                choice = input("""
+                    Select from the Menu
+                    1. Generate Documentation
+                    2. Review Code
+                    3. Read File
+                    4. Read Current Directory
+                    5. Converse with Agent
+                    q. Quit
+                    > """).strip()
             
             
             
