@@ -439,4 +439,20 @@ class MCPClient:
         except Exception as e:
             logger.error(f"Error in read dir: {e}")
             raise
+        
+    
+    def _print_dir_listing(self, items: list[dict]):
+        """Format and print a directory listing.
+
+        Args:
+            items: List of directory items with metadata (type, size, modified, name)
+        """
+        print("\nDirectory Listing:\n")
+        print(f"{'Type':<10} {'Size':>10} {'Modified':<25} {'Name'}")
+        print("-" * 70)
+        for item in items:
+            # Add icon based on item type
+            type_icon = "📁" if item["type"] == "directory" else "📄"
+            size = f"{item['size']} B"
+            print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
            
