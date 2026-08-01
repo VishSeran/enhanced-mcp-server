@@ -1,4 +1,6 @@
 from typing import Any
+from urllib.parse import quote
+import json
 
 from contextlib import AsyncExitStack
 from fastmcp.client.transports import StdioTransport
@@ -326,3 +328,131 @@ class MCPClient:
             logger.error(f"Error in get_llm_response: {e}")
             raise
         
+        
+    async def conversation(self) -> None:
+        
+        print("\nEntering conversation mode. Type 'quit' or 'q' to exit.")
+        
+        while (True):
+            
+            query = input("\nQuery: ").strip()
+            
+            if query.lower() in ("quit", "q"):
+                print("Exit conversation...")
+                break
+            
+            if query is None:
+                print("\nPlease enter a query")
+                continue
+            
+            try:
+                response = await self.get_llm_response(query)
+                print("\n" + response)
+                
+            except Exception as e:
+                logger.error(f"Error in conversation: {e}")
+                raise
+            
+    
+    async def prompt(self, prompt_name:str):
+        
+        try:
+            
+            prompt_res = await self.get_prompt()
+            
+            prompt_obj = next(
+                (p for p in prompt_res if p.name == prompt_name), None
+            )
+            
+            if prompt_obj is None:
+                logger.info(f"No matching prompt name: {prompt_name}")
+            
+            logger.info(f"{prompt_name} prompt extracted success")
+            
+            print(prompt_obj)
+            
+            ## get prompt template arguments
+            arguments = {}
+            
+            if prompt_obj.arguments:
+                for argument in prompt_obj.arguments:
+                    
+                    required = "required" if argument.required else "optioanl"
+                    user_input = input(f"{argument.name} - {required}: ")
+                    
+                    if not user_input and argument.required:
+                        print(f"Error in {argument.name} - {required}")  
+                        return
+                    
+                    if user_input:
+                        arguments[argument.name] = user_input    
+                        
+            # Generate the prompt with provided arguments      
+            prompt_result = await self.stdio_client.get_prompt(prompt_name, arguments)
+            prompt = prompt_result.messages[0].content.text
+            
+            response = await self.get_llm_response(prompt)
+            print(response)
+        
+        except Exception as e:
+            logger.error(f"Error in prompt fetching: {e}")
+            raise
+        
+            
+    async def read_file(self):
+        
+        """Read the contents of a file via MCP resource.
+
+        Prompts the user for a file path and retrieves the file content
+        through the MCP server's file resource.
+        """
+        
+        try:
+            
+            file_name = input("Enter the file name you want to read from the mcp server").strip()
+            encoded_file_name = quote(file_name, safe="")
+            
+            # Access file resource using file:/// URI scheme
+            resource = await self.stdio_client.read_resource(f"file:///{encoded_file_name}")
+            file_content = json.loads(resource[0].text)['file_content']
+            
+            logger.info(f"File Content:\n {file_content}")
+            print(f"File Content:\n {file_content}")
+            
+            return file_content
+
+        except Exception as e:
+            logger.error(f"Error in read file: {e}")
+            raise
+        
+    async def read_dir(self):
+        
+        try:
+            response = await self.stdio_client.read_resource("dir://.")
+            dir_content = json.loads(response[0].text)['content']
+            
+            logger.info(f"File Content:\n {dir_content}")
+            print(f"File Content:\n {dir_content}")
+            
+            return dir_content
+            
+        except Exception as e:
+            logger.error(f"Error in read dir: {e}")
+            raise
+        
+    
+    def _print_dir_listing(self, items: list[dict]):
+        """Format and print a directory listing.
+
+        Args:
+            items: List of directory items with metadata (type, size, modified, name)
+        """
+        print("\nDirectory Listing:\n")
+        print(f"{'Type':<10} {'Size':>10} {'Modified':<25} {'Name'}")
+        print("-" * 70)
+        for item in items:
+            # Add icon based on item type
+            type_icon = "📁" if item["type"] == "directory" else "📄"
+            size = f"{item['size']} B"
+            print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
+           
