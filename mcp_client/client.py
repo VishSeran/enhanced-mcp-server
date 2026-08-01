@@ -455,4 +455,18 @@ class MCPClient:
             type_icon = "📁" if item["type"] == "directory" else "📄"
             size = f"{item['size']} B"
             print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
+            
+    
+    async def menu(self):
+        
+        try:
+            
+            print("\nMCP Client Started!!!")
+            print("Select from the menu or 'quit'/'q' to exit.")
+            
+            
+            
+        except Exception as e:
+            logger.error(f"Error in menu: {e}")
+            raise
            
