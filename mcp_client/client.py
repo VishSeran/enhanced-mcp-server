@@ -1,4 +1,6 @@
 from typing import Any
+from urllib.parse import quote
+import json
 
 from contextlib import AsyncExitStack
 from fastmcp.client.transports import StdioTransport
@@ -408,9 +410,17 @@ class MCPClient:
         try:
             
             file_name = input("Enter the file name you want to read from the mcp server").strip()
-            encoded_file_name = quo
+            encoded_file_name = quote(file_name, safe="")
             
+            # Access file resource using file:/// URI scheme
+            resource = await self.stdio_client.read_resource(f"file:///{encoded_file_name}")
+            file_content = json.load(resource[0].text)['file_content']
             
+            logger.info(f"File Content:\n {file_content}")
+            print(f"File Content:\n {file_content}")
+            
+            return file_content
+
         except Exception as e:
             logger.error(f"Error in read file: {e}")
             raise
