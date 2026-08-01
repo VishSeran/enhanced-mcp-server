@@ -8,6 +8,8 @@ from fastmcp.client import Client
 from fastmcp.client.elicitation import ElicitResult
 from fastmcp.client.transports import StdioTransport
 from langchain_mcp_adapters.tools import load_mcp_tools
+from mcp import ClientSession
+from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from agent.llm_agent import LLMAgent
 from configurations.logger import get_logger
@@ -21,7 +23,8 @@ class MCPClient:
         
         try:
             self.stdio_client = None
-            self.agent = None
+            self.agent = None 
+            self.session = None
             # AsyncExitStack for managing async context managers
             self.exit_stack = AsyncExitStack()
             
@@ -47,13 +50,13 @@ class MCPClient:
             
             if (server_script_path.endswith((".py", ".js", ".ts"))):
                 
-                transport = StdioTransport(
-                                command="python",
-                                args =[server_script_path]
-                            )
+                server_params = StdioServerParameters(
+                    command="python",
+                    args =[server_script_path]
+                )
             
             elif "." in server_script_path:
-                transport = StdioTransport(
+                server_params = StdioServerParameters(
                     command="python",
                     args=["-m", server_script_path]
                 )
@@ -61,14 +64,16 @@ class MCPClient:
             else:
                 raise ValueError("server script must be a .py or .js or .ts file") 
 
-            self.stdio_client = Client(
-                transport,
-                elicitation_handler = self.elicitation_handler,
-                progress_handler = self.progress_handler,
-                message_handler = self.message_handler
+            read,write = await self.exit_stack.enter_async_context(
+                stdio_client(server_params)
             )
             
-            await self.exit_stack.enter_async_context(self.stdio_client)
+            self.session = await self.exit_stack.enter_async_context(
+                ClientSession(read, write)
+            )
+            
+            await self.session.initialize()
+            logger.info("Client session has initialized")
             
             
         except ValueError as e:
@@ -296,12 +301,12 @@ class MCPClient:
         
         try:
             
-            if self.stdio_client is None:
+            if self.session is None:
                 raise RuntimeError(
-                    "MCP server is not connected"
+                    "MCP session is not initialized"
                 )
                 
-            tools = await load_mcp_tools(self.stdio_client)
+            tools = await load_mcp_tools(self.session)
             self.agent = LLMAgent(tools=tools)
             
         except RuntimeError as e:
