@@ -397,4 +397,21 @@ class MCPClient:
             raise
         
             
+    async def read_file(self):
         
+        """Read the contents of a file via MCP resource.
+
+        Prompts the user for a file path and retrieves the file content
+        through the MCP server's file resource.
+        """
+        
+        try:
+            
+            file_name = input("Enter the file name you want to read from the mcp server").strip()
+            encoded_file_name = quo
+            
+            
+        except Exception as e:
+            logger.error(f"Error in read file: {e}")
+            raise
+           
