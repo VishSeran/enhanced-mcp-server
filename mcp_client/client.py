@@ -502,9 +502,7 @@ class MCPClient:
                 result = await action()
                 if result == "quit":
                     break
-            
-            
-            
+        
         except Exception as e:
             logger.error(f"Error in menu: {e}")
             raise
