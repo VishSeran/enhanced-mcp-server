@@ -386,7 +386,11 @@ class MCPClient:
                         arguments[argument.name] = user_input    
                         
             # Generate the prompt with provided arguments      
+            prompt_result = await self.stdio_client.get_prompt(prompt_name, arguments)
+            prompt = prompt_result.messages[0].content.text
             
+            response = await self.get_llm_response(prompt)
+            print(response)
         
         except Exception as e:
             logger.error(f"Error in prompt fetching: {e}")
