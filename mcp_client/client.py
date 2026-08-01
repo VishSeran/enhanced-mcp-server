@@ -467,7 +467,7 @@ class MCPClient:
             print(f"{type_icon:<2} {item['type']:<8} {size:>10}  {item['modified']:<25} {item['name']}")
             
     
-    async def quit():
+    async def quit(self):
         print("Exiting client...")
         return "quit"
         
@@ -482,10 +482,10 @@ class MCPClient:
             menu_actions = {
                 "1": lambda: self.prompt("documentation_generator"),
                 "2": lambda: self.prompt("code_review"),
-                "3": self.read_file(),
-                "4": self.read_dir(),
-                "5": self.conversation(),
-                "6": self.quit()
+                "3": self.read_file,
+                "4": self.read_dir,
+                "5": self.conversation,
+                "q": self.quit
                 
             }
             
