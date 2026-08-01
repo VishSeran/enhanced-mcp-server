@@ -327,7 +327,7 @@ class MCPClient:
             raise
         
         
-    async def conversation(self):
+    async def conversation(self) -> None:
         
         print("\nEntering conversation mode. Type 'quit' or 'q' to exit.")
         
@@ -340,13 +340,17 @@ class MCPClient:
                 break
             
             if query is None:
-                print("\nPlease enter a query")\
+                print("\nPlease enter a query")
                 continue
             
             try:
+                response = await self.get_llm_response(query)
+                print("\n" + response)
                 
             except Exception as e:
                 logger.error(f"Error in conversation: {e}")
                 raise
+        
+        
             
         
