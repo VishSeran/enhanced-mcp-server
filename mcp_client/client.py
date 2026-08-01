@@ -350,7 +350,47 @@ class MCPClient:
             except Exception as e:
                 logger.error(f"Error in conversation: {e}")
                 raise
+            
+    
+    async def prompt(self, prompt_name:str):
         
+        try:
+            
+            prompt_res = await self.get_prompt()
+            
+            prompt_obj = next(
+                (p for p in prompt_res if p.name == prompt_name), None
+            )
+            
+            if prompt_obj is None:
+                logger.info(f"No matching prompt name: {prompt_name}")
+            
+            logger.info(f"{prompt_name} prompt extracted success")
+            
+            print(prompt_obj)
+            
+            ## get prompt template arguments
+            arguments = {}
+            
+            if prompt_obj.arguments:
+                for argument in prompt_obj.arguments:
+                    
+                    required = "required" if argument.required else "optioanl"
+                    user_input = input(f"{argument.name} - {required}: ")
+                    
+                    if not user_input and argument.required:
+                        print(f"Error in {argument.name} - {required}")  
+                        return
+                    
+                    if user_input:
+                        arguments[argument.name] = user_input    
+                        
+            # Generate the prompt with provided arguments      
+            
+        
+        except Exception as e:
+            logger.error(f"Error in prompt fetching: {e}")
+            raise
         
             
         
