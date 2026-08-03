@@ -455,7 +455,7 @@ class MCPClient:
         
         try:
             response = await self.session.read_resource("dir://.")
-            dir_content = json.loads(response[0].text)['content']
+            dir_content = json.loads(response.contents[0].text)
             
             logger.info(f"File Content:\n {dir_content}")
             print(f"File Content:\n {dir_content}")

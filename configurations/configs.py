@@ -33,8 +33,8 @@ def get_relative_path(file_path:str) -> Path:
         
         path = (Base_dir / file_path).resolve()
         
-        rel = path.relative_to(Base_dir)
-        return rel
+        path.relative_to(Base_dir)
+        return path
         
     except ValueError as e:
         logger.error(f"Path is outside Base_dir: {e}")
