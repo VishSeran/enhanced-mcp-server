@@ -439,8 +439,8 @@ class MCPClient:
             encoded_file_name = quote(file_name, safe="")
             
             # Access file resource using file:/// URI scheme
-            resource = await self.stdio_client.read_resource(f"file:///{encoded_file_name}")
-            file_content = json.loads(resource[0].text)['file_content']
+            resource = await self.session.read_resource(f"file:///{encoded_file_name}")
+            file_content = json.loads(resource.contents[0].text)['file_content']
             
             logger.info(f"File Content:\n {file_content}")
             print(f"File Content:\n {file_content}")

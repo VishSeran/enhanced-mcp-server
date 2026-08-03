@@ -41,7 +41,7 @@ class LLMAgent:
             self.llm = ChatGroq(
                 api_key=GROQ_API,
                 model=model_name,
-                temperature=0,
+                temperature=0.5,
                 max_tokens=4000,
                 model_kwargs={"parallel_tool_calls": False}
             )
