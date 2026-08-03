@@ -7,7 +7,7 @@ PORT = 9000
 
 logger = get_logger("config")
 
-Base_dir = Path.cwd()
+Base_dir = Path.cwd().resolve()
 
 
 def get_relative_path(file_path:str) -> Path:
@@ -31,7 +31,9 @@ def get_relative_path(file_path:str) -> Path:
         if not file_path:
             raise ValueError("File path is missing")
         
-        rel = Path(file_path).resolve().relative_to(Base_dir)
+        path = (Base_dir / file_path).resolve()
+        
+        rel = path.relative_to(Base_dir)
         return rel
         
     except ValueError as e:

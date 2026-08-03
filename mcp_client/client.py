@@ -454,7 +454,7 @@ class MCPClient:
     async def read_dir(self):
         
         try:
-            response = await self.stdio_client.read_resource("dir://.")
+            response = await self.session.read_resource("dir://.")
             dir_content = json.loads(response[0].text)['content']
             
             logger.info(f"File Content:\n {dir_content}")
