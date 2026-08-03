@@ -129,6 +129,4 @@ Ideas for building on this foundation:
 
 The original lab content this project is based on is licensed under Apache 2.0.
 
-## Authors
 
-Based on a lab by Abdul Fatir, Joshua Zhou, and Joseph Santarcangelo (Data Scientists @ IBM).
