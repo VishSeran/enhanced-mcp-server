@@ -10,6 +10,7 @@ from fastmcp.client.transports import StdioTransport
 from langchain_mcp_adapters.tools import load_mcp_tools
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
+from mcp.types import ClientCapabilities, ElicitationCapability
 
 from agent.llm_agent import LLMAgent
 from configurations.logger import get_logger
@@ -69,7 +70,15 @@ class MCPClient:
             )
             
             self.session = await self.exit_stack.enter_async_context(
-                ClientSession(read, write)
+                ClientSession(
+                    read,
+                    write,
+                    client_info={
+                        "name": "enhanced-mcp-client",
+                        "version": "1.0.0"
+                    }
+                    ,elicitation_callback= self.elicitation_handler
+                )
             )
             
             await self.session.initialize()
@@ -85,7 +94,10 @@ class MCPClient:
             raise
         
     
-    async def elicitation_handler(self, message:str, response_type:type, ctx:Context):
+    async def elicitation_handler(
+                                self,
+                                context,
+                                params):
         """Handle elicitation requests from the MCP server.
     
                 When the server needs user input, this handler prompts the user,
@@ -101,29 +113,29 @@ class MCPClient:
                     ElicitResult with action="decline" if no response, or response_type instance with user input
                 """
         try:
-            if not message:
-                raise ValueError("Server message is missing")
             
-            print(f"Server asks: {message}")
+            print(f"Server asks: {params.message}")
+            schema = params.requestedSchema
             user_data = {}
             
-            for field_name, field_type in response_type.__annotations__.items():
-                user_input = input(f"Enter value for '{field_name}' ({field_type.__name__}): "). strip()
-                
-                if not user_input:
+            for field_name, field_schema in schema["properties"].items():
+                value = input(f"{field_name}: ")
+
+                if not value:
                     return ElicitResult(action="decline")
+
+                user_data[field_name] = value
             
-                user_data[field_name] = user_input
-                
-            response = response_type(**user_data)
-            
-            await ctx.info(f"elicitation response if fetched: {response}")
-            
+           
             logger.info(
                     "Elicitation response: %s",
-                    response
+                    user_data
                 )
-            return response
+            
+            return ElicitResult(
+                action="accept",
+                content=user_data
+            )
   
         except ValueError as e:
             logger.error(f"Value error: {e}")
@@ -205,7 +217,7 @@ class MCPClient:
         
         try:
             
-            tools_list = await self.stdio_client.list_tools()
+            tools_list = await self.session.list_tools()
             logger.info("Tools are fetched")
         
             tools_des = [
@@ -231,7 +243,7 @@ class MCPClient:
     
     async def get_resources(self) -> list[dict[str, Any]]:
         try:
-            result = await self.stdio_client.list_resources()
+            result = await self.session.list_resources()
 
             resources_list = [
                 {
@@ -255,7 +267,7 @@ class MCPClient:
         
         try:
             
-            result = await self.stdio_client.list_prompts()
+            result = await self.session.list_prompts()
             logger.info("Prompts list fetched success")
             
             return result
@@ -272,7 +284,7 @@ class MCPClient:
             
             try:
                 
-                result = await self.stdio_client.list_resource_templates()
+                result = await self.session.list_resource_templates()
                 logger.info("resource templates list fetched success")
                 
                 return result
@@ -290,7 +302,7 @@ class MCPClient:
         
         await self.exit_stack.aclose()
         
-        self.stdio_client = None
+        self.session = None
         self.agent = None
         
         logger.info(
@@ -307,6 +319,9 @@ class MCPClient:
                 )
                 
             tools = await load_mcp_tools(self.session)
+            
+            
+                
             self.agent = LLMAgent(tools=tools)
             
         except RuntimeError as e:
@@ -369,9 +384,10 @@ class MCPClient:
         try:
             
             prompt_res = await self.get_prompt()
+            prompt_result = prompt_res.prompts
             
             prompt_obj = next(
-                (p for p in prompt_res if p.name == prompt_name), None
+                (prompt for prompt in prompt_result if prompt.name == prompt_name), None
             )
             
             if prompt_obj is None:
@@ -387,7 +403,7 @@ class MCPClient:
             if prompt_obj.arguments:
                 for argument in prompt_obj.arguments:
                     
-                    required = "required" if argument.required else "optioanl"
+                    required = "required" if argument.required else "optional"
                     user_input = input(f"{argument.name} - {required}: ")
                     
                     if not user_input and argument.required:
@@ -398,7 +414,7 @@ class MCPClient:
                         arguments[argument.name] = user_input    
                         
             # Generate the prompt with provided arguments      
-            prompt_result = await self.stdio_client.get_prompt(prompt_name, arguments)
+            prompt_result = await self.session.get_prompt(prompt_name, arguments)
             prompt = prompt_result.messages[0].content.text
             
             response = await self.get_llm_response(prompt)
@@ -423,8 +439,8 @@ class MCPClient:
             encoded_file_name = quote(file_name, safe="")
             
             # Access file resource using file:/// URI scheme
-            resource = await self.stdio_client.read_resource(f"file:///{encoded_file_name}")
-            file_content = json.loads(resource[0].text)['file_content']
+            resource = await self.session.read_resource(f"file:///{encoded_file_name}")
+            file_content = json.loads(resource.contents[0].text)['file_content']
             
             logger.info(f"File Content:\n {file_content}")
             print(f"File Content:\n {file_content}")
@@ -438,7 +454,7 @@ class MCPClient:
     async def read_dir(self):
         
         try:
-            response = await self.stdio_client.read_resource("dir://.")
+            response = await self.session.read_resource("dir://.")
             dir_content = json.loads(response[0].text)['content']
             
             logger.info(f"File Content:\n {dir_content}")
