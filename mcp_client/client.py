@@ -94,7 +94,10 @@ class MCPClient:
             raise
         
     
-    async def elicitation_handler(self, message:str, response_type:type):
+    async def elicitation_handler(
+                                self,
+                                context,
+                                params):
         """Handle elicitation requests from the MCP server.
     
                 When the server needs user input, this handler prompts the user,
@@ -110,29 +113,29 @@ class MCPClient:
                     ElicitResult with action="decline" if no response, or response_type instance with user input
                 """
         try:
-            if not message:
-                raise ValueError("Server message is missing")
             
-            print(f"Server asks: {message}")
+            print(f"Server asks: {params.message}")
+            schema = params.requestedSchema
             user_data = {}
             
-            for field_name, field_type in response_type.__annotations__.items():
-                user_input = input(f"Enter value for '{field_name}' ({field_type.__name__}): "). strip()
-                
-                if not user_input:
+            for field_name, field_schema in schema["properties"].items():
+                value = input(f"{field_name}: ")
+
+                if not value:
                     return ElicitResult(action="decline")
+
+                user_data[field_name] = value
             
-                user_data[field_name] = user_input
-                
-            response = response_type(**user_data)
-            
-            logger.info(f"Elicitation response: {response}")
-            
+           
             logger.info(
                     "Elicitation response: %s",
-                    response
+                    user_data
                 )
-            return response
+            
+            return ElicitResult(
+                action="accept",
+                content=user_data
+            )
   
         except ValueError as e:
             logger.error(f"Value error: {e}")
@@ -316,6 +319,9 @@ class MCPClient:
                 )
                 
             tools = await load_mcp_tools(self.session)
+            
+            
+                
             self.agent = LLMAgent(tools=tools)
             
         except RuntimeError as e:
