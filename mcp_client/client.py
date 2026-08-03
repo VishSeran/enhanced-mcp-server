@@ -10,6 +10,7 @@ from fastmcp.client.transports import StdioTransport
 from langchain_mcp_adapters.tools import load_mcp_tools
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
+from mcp.types import ClientCapabilities, ElicitationCapability
 
 from agent.llm_agent import LLMAgent
 from configurations.logger import get_logger
@@ -69,7 +70,15 @@ class MCPClient:
             )
             
             self.session = await self.exit_stack.enter_async_context(
-                ClientSession(read, write)
+                ClientSession(
+                    read,
+                    write,
+                    client_info={
+                        "name": "enhanced-mcp-client",
+                        "version": "1.0.0"
+                    }
+                    ,elicitation_callback= self.elicitation_handler
+                )
             )
             
             await self.session.initialize()
@@ -85,7 +94,7 @@ class MCPClient:
             raise
         
     
-    async def elicitation_handler(self, message:str, response_type:type, ctx:Context):
+    async def elicitation_handler(self, message:str, response_type:type):
         """Handle elicitation requests from the MCP server.
     
                 When the server needs user input, this handler prompts the user,
@@ -117,7 +126,7 @@ class MCPClient:
                 
             response = response_type(**user_data)
             
-            await ctx.info(f"elicitation response if fetched: {response}")
+            logger.info(f"Elicitation response: {response}")
             
             logger.info(
                     "Elicitation response: %s",
@@ -205,7 +214,7 @@ class MCPClient:
         
         try:
             
-            tools_list = await self.stdio_client.list_tools()
+            tools_list = await self.session.list_tools()
             logger.info("Tools are fetched")
         
             tools_des = [
@@ -231,7 +240,7 @@ class MCPClient:
     
     async def get_resources(self) -> list[dict[str, Any]]:
         try:
-            result = await self.stdio_client.list_resources()
+            result = await self.session.list_resources()
 
             resources_list = [
                 {
@@ -255,7 +264,7 @@ class MCPClient:
         
         try:
             
-            result = await self.stdio_client.list_prompts()
+            result = await self.session.list_prompts()
             logger.info("Prompts list fetched success")
             
             return result
@@ -272,7 +281,7 @@ class MCPClient:
             
             try:
                 
-                result = await self.stdio_client.list_resource_templates()
+                result = await self.session.list_resource_templates()
                 logger.info("resource templates list fetched success")
                 
                 return result
@@ -290,7 +299,7 @@ class MCPClient:
         
         await self.exit_stack.aclose()
         
-        self.stdio_client = None
+        self.session = None
         self.agent = None
         
         logger.info(
@@ -369,9 +378,10 @@ class MCPClient:
         try:
             
             prompt_res = await self.get_prompt()
+            prompt_result = prompt_res.prompts
             
             prompt_obj = next(
-                (p for p in prompt_res if p.name == prompt_name), None
+                (prompt for prompt in prompt_result if prompt.name == prompt_name), None
             )
             
             if prompt_obj is None:
@@ -387,7 +397,7 @@ class MCPClient:
             if prompt_obj.arguments:
                 for argument in prompt_obj.arguments:
                     
-                    required = "required" if argument.required else "optioanl"
+                    required = "required" if argument.required else "optional"
                     user_input = input(f"{argument.name} - {required}: ")
                     
                     if not user_input and argument.required:
@@ -398,7 +408,7 @@ class MCPClient:
                         arguments[argument.name] = user_input    
                         
             # Generate the prompt with provided arguments      
-            prompt_result = await self.stdio_client.get_prompt(prompt_name, arguments)
+            prompt_result = await self.session.get_prompt(prompt_name, arguments)
             prompt = prompt_result.messages[0].content.text
             
             response = await self.get_llm_response(prompt)
